@@ -16,4 +16,10 @@ public class AssignmentRepository(AppDbContext dbContext) : IAssignmentRepositor
 
     public async Task AddRangeAsync(IEnumerable<Assignment> assignments, CancellationToken cancellationToken) 
         => await _assignments.AddRangeAsync(assignments, cancellationToken);
+
+    public async Task<List<Assignment>> GetAssignmentWhitUserSubmissionAsync(Guid courseId, Guid userId, CancellationToken cancellationToken) 
+        => await _assignments
+            .Where(a => a.CourseId == courseId)
+            .Include(a => a.Submissions.Where(s => s.UserId == userId))
+            .ToListAsync(cancellationToken);
 }
