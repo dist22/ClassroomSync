@@ -1,0 +1,6 @@
+@ClassroomSync_HostAddress = http://localhost:5175
+
+GET {{ClassroomSync_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
