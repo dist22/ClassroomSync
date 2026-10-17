@@ -16,5 +16,7 @@ public class UserProfile : Profile
                 opt.PreCondition(src => !string.IsNullOrEmpty(src.RefreshToken));
                 opt.MapFrom(src => src.RefreshToken);
             });
+
+        CreateMap<User, UserDto>();
     }
 }

@@ -10,14 +10,19 @@ public class UserRepository(AppDbContext dbContext) : IUserRepository
     public async Task<User?> GetByGoogleIdAsync(string googleId, CancellationToken cancellationToken)
         => await dbContext.Users.FirstOrDefaultAsync(x => x.GoogleId == googleId, cancellationToken);
 
-    public async Task<User?> GetByIdAsync(Guid id, CancellationToken cancellationToken) 
+    public async Task<User?> GetByIdAsync(Guid id, CancellationToken cancellationToken)
         => await dbContext.Users.FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
 
-    public async Task<User?> GetUserWithCoursesAsync(Guid id, CancellationToken cancellationToken) 
+    public async Task<User?> GetUserWithCoursesAsync(Guid id, CancellationToken cancellationToken)
         => await dbContext.Users
             .Include(u => u.UserCourses)
             .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
-    
+
+    public async Task<IEnumerable<User>> GetAllAsync(CancellationToken cancellationToken)
+        => await dbContext.Users
+            .AsNoTracking()
+            .ToListAsync(cancellationToken);
+
     public async Task AddAsync(User user, CancellationToken cancellationToken)
     {
         await dbContext.Users.AddAsync(user, cancellationToken);
