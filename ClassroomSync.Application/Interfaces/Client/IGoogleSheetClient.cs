@@ -2,5 +2,5 @@
 
 public interface IGoogleSheetClient
 {
-    Task WriteToCellAsync(string spreadsheetId, string range, string value);
+    public Task UpdateMasterSheetByNameAsync(string sheetName, IList<IList<object>> data, CancellationToken cancellationToken);
 }

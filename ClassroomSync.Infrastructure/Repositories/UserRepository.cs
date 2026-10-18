@@ -18,6 +18,15 @@ public class UserRepository(AppDbContext dbContext) : IUserRepository
             .Include(u => u.UserCourses)
             .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
 
+    public async Task<List<User>> GetAllUsersWithFullProgressAsync(CancellationToken cancellationToken) 
+        => await  dbContext.Users
+            .Include(u => u.UserCourses)
+                .ThenInclude(u => u.Course)
+                .ThenInclude(c => c.Assignments)
+            .Include(u => u.Submissions)
+            .ToListAsync(cancellationToken);
+    
+
     public async Task<IEnumerable<User>> GetAllAsync(CancellationToken cancellationToken)
         => await dbContext.Users
             .AsNoTracking()

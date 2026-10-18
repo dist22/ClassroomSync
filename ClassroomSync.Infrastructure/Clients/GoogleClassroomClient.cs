@@ -9,22 +9,15 @@ using Microsoft.Extensions.Configuration;
 
 namespace ClassroomSync.Infrastructure.Clients;
 
-public class GoogleClassroomClient : IGoogleClassroomClient
+public class GoogleClassroomClient(ClientSecrets clientSecrets, IConfiguration configuration) : IGoogleClassroomClient
 {
-    private readonly ClientSecrets _clientSecrets;
-    private readonly string _applicationName;
+    private readonly string _applicationName = configuration["GoogleApi:ApplicationName"] ?? "ClassroomSync";
 
-    public GoogleClassroomClient(ClientSecrets clientSecrets, IConfiguration configuration)
-    {
-        _clientSecrets = clientSecrets;
-        _applicationName = configuration["GoogleApi:ApplicationName"] ?? "ClassroomSync"; 
-    }
-    
     private ClassroomService CreateService(string refreshToken)
     {
         var flow = new GoogleAuthorizationCodeFlow(new GoogleAuthorizationCodeFlow.Initializer
         {
-            ClientSecrets = _clientSecrets
+            ClientSecrets = clientSecrets
         });
 
         var credential = new UserCredential(flow, "user", new TokenResponse

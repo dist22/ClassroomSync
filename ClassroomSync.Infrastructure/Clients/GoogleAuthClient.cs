@@ -15,26 +15,28 @@ public class GoogleAuthClient(ClientSecrets clientSecrets) : IGoogleAuthClient
         return new GoogleAuthorizationCodeFlow(new GoogleAuthorizationCodeFlow.Initializer
         {
             ClientSecrets = clientSecrets,
-            Scopes = new[] 
-            { 
-                ClassroomService.Scope.ClassroomCoursesReadonly, 
-                "https://www.googleapis.com/auth/userinfo.email", 
+            Scopes = new[]
+            {
+                ClassroomService.Scope.ClassroomCoursesReadonly,
+                "https://www.googleapis.com/auth/userinfo.email",
                 "https://www.googleapis.com/auth/userinfo.profile",
                 ClassroomService.Scope.ClassroomCourseworkMeReadonly
             }
         });
     }
-    
+
     public string GetAuthorizationUrl(string redirectUri)
     {
-        var flow = GetFlow(); 
-    
+        var flow = GetFlow();
+
         // Приводимо базовий інтерфейс до специфічного класу Google
-        var request = (Google.Apis.Auth.OAuth2.Requests.GoogleAuthorizationCodeRequestUrl)flow.CreateAuthorizationCodeRequest(redirectUri);
-    
+        var request =
+            (Google.Apis.Auth.OAuth2.Requests.GoogleAuthorizationCodeRequestUrl)flow.CreateAuthorizationCodeRequest(
+                redirectUri);
+
         // Тепер властивості доступні, і бібліотека сама згенерує правильний URL без дублювання
         request.AccessType = "offline";
-        request.Prompt = "consent"; 
+        request.Prompt = "consent";
 
         return request.Build().ToString();
     }
@@ -43,16 +45,17 @@ public class GoogleAuthClient(ClientSecrets clientSecrets) : IGoogleAuthClient
         CancellationToken cancellationToken)
     {
         var flow = GetFlow();
-        
+
         var tokenResponse = await flow.ExchangeCodeForTokenAsync("user", code, redirectUri, cancellationToken);
-        
+
         using var httpClient = new HttpClient();
-        httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", tokenResponse.AccessToken);
-        
+        httpClient.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", tokenResponse.AccessToken);
+
         var userInfoResponse = await httpClient.GetStringAsync("https://www.googleapis.com/oauth2/v2/userinfo");
         using var jsonDocument = JsonDocument.Parse(userInfoResponse);
         var root = jsonDocument.RootElement;
-        
+
         return new GoogleUserInfoDto(
             GoogleId: root.GetProperty("id").GetString()!,
             Email: root.GetProperty("email").GetString()!,
