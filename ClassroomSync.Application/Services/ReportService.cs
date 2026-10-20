@@ -9,46 +9,70 @@ public class ReportService(IUserRepository userRepository, IGoogleSheetClient go
 {
     public async Task SyncMasterReportAsync(CancellationToken cancellationToken = default)
     {
+        // 1. Отримуємо дані з БД (у репозиторії має бути .AsNoTracking())
         var users = await userRepository.GetAllUsersWithFullProgressAsync(cancellationToken);
-        
-        var allCourses = new Dictionary<Guid, Course>(); 
-        foreach (var user in users)
-            foreach (var userCourse in user.UserCourses)
-                allCourses.TryAdd(userCourse.CourseId, userCourse.Course);
+        if (users == null || !users.Any()) return;
+
+        // 2. Індексуємо дані в пам'яті для миттєвого доступу O(1)
+
+        // Пре-парсинг коротких імен студентів (щоб не робити .Split в кожному рядку)
+        var studentShortNames = users.ToDictionary(
+            u => u.Id,
+            u =>
+            {
+                var nameParts = (u.LastName ?? "Без_Імені").Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                return nameParts.Length > 0 ? nameParts[0] : "Без_Імені";
+            });
+
+        // Індексуємо студентів по курсах: CourseId -> List<User>
+        var studentsByCourse = users
+            .SelectMany(u => u.UserCourses.Select(uc => new { uc.CourseId, User = u }))
+            .ToLookup(x => x.CourseId, x => x.User);
+
+        // Індексуємо роботи за складеним ключем: (UserId, AssignmentId) -> Submission
+        var submissionMap = users
+            .SelectMany(u => (u.Submissions ?? Enumerable.Empty<StudentSubmission>())
+                .Select(s => new { Key = (u.Id, s.AssignmentId), Submission = s }))
+            .DistinctBy(x => x.Key)
+            .ToDictionary(x => x.Key, x => x.Submission);
+
+        // Збираємо унікальні курси
+        var allCourses = users
+            .SelectMany(u => u.UserCourses)
+            .Select(uc => uc.Course)
+            .DistinctBy(c => c.Id)
+            .ToList();
 
         var courseDataMap = new Dictionary<string, List<IList<object>>>();
+        var now = DateTime.UtcNow;
 
-        foreach (var courseKvp in allCourses)
+        // 3. Формуємо матриці в пам'яті
+        foreach (var course in allCourses)
         {
-            var course = courseKvp.Value;
             var sheetName = CleanSheetName(course.Name);
             var sheetData = new List<IList<object>>();
 
-            var enrolledStudents = users
-                .Where(u => u.UserCourses.Any(uc => uc.CourseId == course.Id))
-                .OrderBy(u => u.LastName) 
+            // Отримуємо студентів курсу та відразу їх сортуємо
+            var enrolledStudents = studentsByCourse[course.Id]
+                .OrderBy(u => u.LastName)
                 .ToList();
 
-            // 1. РЯДОК 1: Назва предмету з гіперпосиланням 
-            string courseUrl = course.Url ?? ""; 
+            if (!enrolledStudents.Any()) continue;
+
+            // Рядок 1: Назва предмету
+            string courseUrl = course.Url ?? "";
             string safeCourseName = (course.Name ?? "Курс").Replace("\"", "\"\"");
-            string courseHeader = string.IsNullOrEmpty(courseUrl) 
-                ? course.Name 
+            string courseHeader = string.IsNullOrEmpty(courseUrl)
+                ? course.Name
                 : $"=HYPERLINK(\"{courseUrl}\"; \"{safeCourseName}\")";
             sheetData.Add(new List<object> { courseHeader });
 
-            // 2. РЯДОК 2: Заголовки (Назва дз, Дедлайн, Посилання + Імена студентів)
+            // Рядок 2: Заголовки
             var headers = new List<object> { "Назва дз", "Дедлайн", "Посилання" };
-            headers.AddRange(enrolledStudents.Select(s => 
-            {
-                var nameParts = (s.LastName ?? "Без_Імені").Split(' ', StringSplitOptions.RemoveEmptyEntries);
-                return nameParts.Length > 0 ? nameParts[0] : "Без_Імені";
-            }));
+            headers.AddRange(enrolledStudents.Select(s => studentShortNames[s.Id]));
             sheetData.Add(headers);
 
-            // 3. РЯДКИ ЗАВДАНЬ
-            var now = DateTime.UtcNow;
-
+            // Рядки завдань (Сортування: спочатку ті що з дедлайном, потім за датою дедлайну, потім за назвою)
             var sortedAssignments = course.Assignments
                 .OrderBy(a => a.DueDate.HasValue ? 0 : 1)
                 .ThenBy(a => a.DueDate)
@@ -57,45 +81,40 @@ public class ReportService(IUserRepository userRepository, IGoogleSheetClient go
             foreach (var assignment in sortedAssignments)
             {
                 string assignmentUrl = assignment.Course.Url ?? "";
-                string assignmentLinkForm = string.IsNullOrEmpty(assignmentUrl) 
-                    ? "-" 
+                string assignmentLinkForm = string.IsNullOrEmpty(assignmentUrl)
+                    ? "-"
                     : $"=HYPERLINK(\"{assignmentUrl}\"; \"Посилання\")";
 
                 var row = new List<object>
                 {
                     assignment.Title,
-                    assignment.DueDate?.ToString("dd.MM") ?? "---",
+                    assignment.DueDate?.ToString("dd.MM") ?? "?",
                     assignmentLinkForm
                 };
 
                 bool isOverdue = assignment.DueDate.HasValue && assignment.DueDate.Value < now;
+                string maxPointsStr = assignment.MaxPoints.HasValue ? assignment.MaxPoints.Value.ToString() : "?";
 
-                // Оцінки та статуси для кожного студента
+                // O(1) пошук здачі для кожного студента
                 foreach (var student in enrolledStudents)
                 {
-                    var submission = student.Submissions?.FirstOrDefault(s => s.AssignmentId == assignment.Id);
-                    
-                    string displayValue;
+                    submissionMap.TryGetValue((student.Id, assignment.Id), out var submission);
 
+                    string displayValue;
                     if (submission != null && submission.AssignedGrade.HasValue)
                     {
-                        // Оцінено: показуємо бали з максимуму (наприклад "8/10")
-                        var maxPoints = assignment.MaxPoints.HasValue ? assignment.MaxPoints.Value.ToString() : "?";
-                        displayValue = $"{submission.AssignedGrade.Value}/{maxPoints}";
+                        displayValue = $"{submission.AssignedGrade.Value}/{maxPointsStr}";
                     }
                     else if (submission != null && submission.State == "TURNED_IN")
                     {
-                        // Здано, але не оцінено
                         displayValue = "Здано";
                     }
                     else if (isOverdue)
                     {
-                        // Прострочено дедлайн
                         displayValue = "Прострочено";
                     }
                     else
                     {
-                        // Не здано (дедлайн ще попереду або його немає)
                         displayValue = "Не здано";
                     }
 
@@ -103,13 +122,26 @@ public class ReportService(IUserRepository userRepository, IGoogleSheetClient go
                 }
                 sheetData.Add(row);
             }
+
             courseDataMap[sheetName] = sheetData;
         }
 
-        foreach (var courseSheet in courseDataMap)
+        // 4. Паралельне відправлення даних у Google Sheets (з лімітом у 3 одночасних запити)
+        using var semaphore = new SemaphoreSlim(3);
+        var tasks = courseDataMap.Select(async courseSheet =>
         {
-            await googleSheetClient.UpdateMasterSheetByNameAsync(courseSheet.Key, courseSheet.Value, cancellationToken);
-        }
+            await semaphore.WaitAsync(cancellationToken);
+            try
+            {
+                await googleSheetClient.UpdateMasterSheetByNameAsync(courseSheet.Key, courseSheet.Value, cancellationToken);
+            }
+            finally
+            {
+                semaphore.Release();
+            }
+        });
+
+        await Task.WhenAll(tasks);
     }
 
     private string CleanSheetName(string originalName)

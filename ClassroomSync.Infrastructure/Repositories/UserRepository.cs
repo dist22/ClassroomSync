@@ -24,6 +24,7 @@ public class UserRepository(AppDbContext dbContext) : IUserRepository
                 .ThenInclude(u => u.Course)
                 .ThenInclude(c => c.Assignments)
             .Include(u => u.Submissions)
+            .AsNoTracking()
             .ToListAsync(cancellationToken);
     
 
