@@ -11,7 +11,7 @@ public class CourseService(
     ICourseRepository courseRepository,
     IMapper mapper,
     IUnitOfWork unitOfWork,
-    IGoogleClassroomClient googleClassroomClient) : ICourseServiсe
+    IGoogleClassroomClient googleClassroomClient) : ICourseService
 {
     public async Task<List<string>> SyncUserCoursesAsync(Guid userId, string refreshToken, CancellationToken cancellationToken)
     {

@@ -16,6 +16,7 @@ public class UserRepository(AppDbContext dbContext) : IUserRepository
     public async Task<User?> GetUserWithCoursesAsync(Guid id, CancellationToken cancellationToken)
         => await dbContext.Users
             .Include(u => u.UserCourses)
+                .ThenInclude(uc => uc.Course)
             .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
 
     public async Task<List<User>> GetAllUsersWithFullProgressAsync(CancellationToken cancellationToken) 

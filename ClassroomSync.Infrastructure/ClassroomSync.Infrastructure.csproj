@@ -9,6 +9,8 @@
     <ItemGroup>
       <PackageReference Include="Google.Apis.Classroom.v1" Version="1.76.0.4254" />
       <PackageReference Include="Google.Apis.Sheets.v4" Version="1.77.0.4281" />
+      <PackageReference Include="Hangfire.AspNetCore" Version="1.8.25" />
+      <PackageReference Include="Hangfire.PostgreSql" Version="1.21.1" />
       <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.20" />
       <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="9.0.20">
         <PrivateAssets>all</PrivateAssets>

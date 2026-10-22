@@ -1,13 +1,17 @@
 ﻿using ClassroomSync.Application.Interfaces.Client;
+using ClassroomSync.Application.Interfaces.Jobs;
 using ClassroomSync.Application.Interfaces.Repositories;
 using ClassroomSync.Infrastructure.Clients;
 using ClassroomSync.Infrastructure.Data.Context;
+using ClassroomSync.Infrastructure.Jobs;
 using ClassroomSync.Infrastructure.Repositories;
 using Google.Apis.Auth.OAuth2;
 using Google.Apis.Classroom.v1;
 using Google.Apis.Services;
 using Google.Apis.Sheets.v4;
 using Google.Apis.Util.Store;
+using Hangfire;
+using Hangfire.PostgreSql;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -81,6 +85,22 @@ public static class DependencyInjection
         services.AddScoped<ICourseRepository, CourseRepository>();
         services.AddScoped<IAssignmentRepository, AssignmentRepository>();
         services.AddScoped<ISubmissionRepository, SubmissionsRepository>();
+        
+        return services;
+    }
+
+    public static IServiceCollection AddHangFire(this IServiceCollection services ,IConfiguration configuration)
+    {
+        
+        services.AddScoped<IJobDispatcher, HangfireJobDispatcher>();
+
+        services.AddHangfire(config => config
+            .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
+            .UseSimpleAssemblyNameTypeSerializer()
+            .UseRecommendedSerializerSettings()
+            .UsePostgreSqlStorage(configuration.GetConnectionString("Default"))); 
+
+        services.AddHangfireServer();
         
         return services;
     }

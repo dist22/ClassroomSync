@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using ClassroomSync.Application.Interfaces.Client;
+using ClassroomSync.Application.Interfaces.Jobs;
 using ClassroomSync.Application.Interfaces.Repositories;
 using ClassroomSync.Application.Interfaces.Sevices;
 using ClassroomSync.Domain.Entities;
@@ -11,9 +12,7 @@ public class AuthService(
     IMapper mapper,
     IUserRepository userRepository,
     IUnitOfWork unitOfWork,
-    ICourseServiсe courseServiсe,
-    IAssignmentService assignmentService,
-    ISubmissionService submissionService) : IAuthService
+    IJobDispatcher jobDispatcher) : IAuthService
 {
     public string GetLoginUrl(string redirectUri)
         => googleAuthClient.GetAuthorizationUrl(redirectUri);
@@ -37,16 +36,7 @@ public class AuthService(
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
 
-        var syncedGoogleCoursesIds =
-            await courseServiсe.SyncUserCoursesAsync(user.Id, user.RefreshToken, cancellationToken);
-        if (syncedGoogleCoursesIds.Any())
-        {
-            await assignmentService.SyncAssignmentsForCoursesAsync(syncedGoogleCoursesIds, user.RefreshToken,
-                cancellationToken);
-
-            await submissionService.SyncSubmissionsAsync(syncedGoogleCoursesIds, user.Id, user.RefreshToken,
-                cancellationToken);
-        }
+        jobDispatcher.EnqueueClassroomSync(user.Id);
 
         return user.Id;
     }
