@@ -9,7 +9,7 @@ using Microsoft.Extensions.Configuration;
 
 namespace ClassroomSync.Infrastructure.Clients;
 
-public class GoogleSheetsClient(SheetsService sheetsService, IConfiguration configuration, ClientSecrets clientSecrets)
+public class GoogleSheetsClient(IConfiguration configuration)
     : IGoogleSheetClient
 {
     private readonly string _masterSpreadsheetId = configuration["GoogleApi:MasterSpreadsheetId"] ??
@@ -17,16 +17,29 @@ public class GoogleSheetsClient(SheetsService sheetsService, IConfiguration conf
 
     private readonly string _applicationName = configuration["GoogleApi:ApplicationName"] ?? "ClassroomSync";
     
-    private readonly string _serviceAccountKeyPath = configuration["GoogleApi:CredentialsPath"] 
-                                                     ?? throw new ArgumentNullException($"CredentialsPath is missing");
     
     private SheetsService CreateService()
     {
         GoogleCredential credential;
-        using (var stream = new FileStream(_serviceAccountKeyPath, FileMode.Open, FileAccess.Read))
+        string credentialsJson = configuration["GoogleApi:CredentialsJson"];
+
+        if (!string.IsNullOrEmpty(credentialsJson))
         {
-            credential = GoogleCredential.FromStream(stream)
+            // Створюємо Credential прямо з JSON-рядка
+            credential = GoogleCredential.FromJson(credentialsJson)
                 .CreateScoped(SheetsService.Scope.Spreadsheets);
+        }
+        else
+        {
+            // 2. Якщо JSON немає, використовуємо шлях до файлу (локальна розробка)
+            string serviceAccountKeyPath = configuration["GoogleApi:CredentialsPath"] 
+                                           ?? throw new ArgumentNullException("CredentialsPath (and CredentialsJson) are missing");
+
+            using (var stream = new FileStream(serviceAccountKeyPath, FileMode.Open, FileAccess.Read))
+            {
+                credential = GoogleCredential.FromStream(stream)
+                    .CreateScoped(SheetsService.Scope.Spreadsheets);
+            }
         }
 
         return new SheetsService(new BaseClientService.Initializer

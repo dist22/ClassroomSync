@@ -1,4 +1,5 @@
-﻿using ClassroomSync.Application.Interfaces.Client;
+﻿using System.Text;
+using ClassroomSync.Application.Interfaces.Client;
 using ClassroomSync.Application.Interfaces.Jobs;
 using ClassroomSync.Application.Interfaces.Repositories;
 using ClassroomSync.Infrastructure.Clients;
@@ -54,17 +55,33 @@ public static class DependencyInjection
     
     public static IServiceCollection AddGoogleAuthentication(this IServiceCollection services, IConfiguration configuration)
     {
-        string secretPath = configuration["GoogleApi:ClientSecretPath"] 
-                            ?? throw new InvalidOperationException("Шлях до client_secret не знайдено в налаштуваннях.");
-
         ClientSecrets secrets;
-        using (var stream = new FileStream(secretPath, FileMode.Open, FileAccess.Read))
+
+        // 1. Спочатку шукаємо JSON текст зі змінних середовища (для хмари)
+        string secretJson = configuration["GoogleApi:ClientSecretJson"];
+
+        if (!string.IsNullOrEmpty(secretJson))
         {
-            secrets = GoogleClientSecrets.Load(stream).Secrets;
+            // Перетворюємо рядок на потік байтів, щоб Google SDK зміг його прочитати
+            using (var stream = new MemoryStream(Encoding.UTF8.GetBytes(secretJson)))
+            {
+                secrets = GoogleClientSecrets.Load(stream).Secrets;
+            }
+        }
+        else
+        {
+            // 2. Якщо тексту немає, шукаємо файл на диску (для локальної розробки)
+            string secretPath = configuration["GoogleApi:ClientSecretPath"] 
+                                ?? throw new InvalidOperationException("Ані ClientSecretJson, ані ClientSecretPath не знайдено в налаштуваннях.");
+
+            using (var stream = new FileStream(secretPath, FileMode.Open, FileAccess.Read))
+            {
+                secrets = GoogleClientSecrets.Load(stream).Secrets;
+            }
         }
 
         services.AddSingleton(secrets);
-        
+    
         return services;
     }
 
