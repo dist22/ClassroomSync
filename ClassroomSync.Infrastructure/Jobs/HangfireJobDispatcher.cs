@@ -10,10 +10,12 @@ public class HangfireJobDispatcher(IBackgroundJobClient backgroundJobClient) : I
         var step1Id = backgroundJobClient.Enqueue<IClassroomWorkflowJob>(job =>
             job.SyncCoursesAsync(userId, CancellationToken.None));
         
-        var step2Id = backgroundJobClient.ContinueJobWith<IClassroomWorkflowJob>(step1Id, job =>
+        backgroundJobClient.ContinueJobWith<IClassroomWorkflowJob>(step1Id, job =>
             job.SyncAssignmentsAndSubmissionsAsync(userId, CancellationToken.None));
+    }
 
-        backgroundJobClient.ContinueJobWith<IReportWorkflowJob>(step2Id, job =>
-            job.UpdateGoogleSheetAsync(CancellationToken.None));
+    public void ScheduleSheetUpdate()
+    {
+        backgroundJobClient.Enqueue<IReportWorkflowJob>(job => job.UpdateGoogleSheetAsync(CancellationToken.None));
     }
 }

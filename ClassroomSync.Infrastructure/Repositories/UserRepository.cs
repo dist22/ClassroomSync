@@ -10,6 +10,9 @@ public class UserRepository(AppDbContext dbContext) : IUserRepository
     public async Task<User?> GetByGoogleIdAsync(string googleId, CancellationToken cancellationToken)
         => await dbContext.Users.FirstOrDefaultAsync(x => x.GoogleId == googleId, cancellationToken);
 
+    public async Task<List<Guid>> GetAllUserIdsAsync(CancellationToken cancellationToken) 
+        => await dbContext.Users.Select(u => u.Id).ToListAsync(cancellationToken);
+
     public async Task<User?> GetByIdAsync(Guid id, CancellationToken cancellationToken)
         => await dbContext.Users.FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
 

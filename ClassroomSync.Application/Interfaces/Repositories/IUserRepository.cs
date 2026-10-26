@@ -5,6 +5,7 @@ namespace ClassroomSync.Application.Interfaces.Repositories;
 public interface IUserRepository
 {
     public Task<User?> GetByGoogleIdAsync(string googleId, CancellationToken cancellationToken);
+    public Task<List<Guid>> GetAllUserIdsAsync(CancellationToken cancellationToken);
     public Task<User?> GetByIdAsync(Guid id, CancellationToken cancellationToken);
     public Task<User?> GetUserWithCoursesAsync(Guid id, CancellationToken cancellationToken);
     public Task<List<User>> GetAllUsersWithFullProgressAsync(CancellationToken cancellationToken);

@@ -3,4 +3,6 @@
 public interface IJobDispatcher
 {
     void EnqueueClassroomSync(Guid userId);
+
+    void ScheduleSheetUpdate();
 }
