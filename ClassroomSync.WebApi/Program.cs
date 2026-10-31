@@ -1,6 +1,7 @@
 using ClassroomSync.Application;
 using ClassroomSync.Infrastructure;
 using ClassroomSync.Infrastructure.Data;
+using ClassroomSync.WebApi.Extensions;
 using Hangfire;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -23,6 +24,11 @@ var app = builder.Build();
 
 app.UseSwagger();
 app.UseSwaggerUI();
+
 app.UseHangfireDashboard();
+app.UseRecurringJobs();
+
+app.MapHealthCheck();
+
 app.MapControllers();
 app.Run();
