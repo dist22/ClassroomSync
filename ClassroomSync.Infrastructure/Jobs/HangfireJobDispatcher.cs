@@ -14,8 +14,5 @@ public class HangfireJobDispatcher(IBackgroundJobClient backgroundJobClient) : I
             job.SyncAssignmentsAndSubmissionsAsync(userId, CancellationToken.None));
     }
 
-    public void ScheduleSheetUpdate()
-    {
-        backgroundJobClient.Enqueue<IReportWorkflowJob>(job => job.UpdateGoogleSheetAsync(CancellationToken.None));
-    }
+    public void ScheduleSheetUpdate() => backgroundJobClient.Enqueue<IReportWorkflowJob>(job => job.UpdateGoogleSheetAsync(CancellationToken.None));
 }

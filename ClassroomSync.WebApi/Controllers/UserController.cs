@@ -8,10 +8,10 @@ namespace ClassroomSync.WebApi.Controllers;
 [Route("api/[controller]")]
 public class UserController(IUserService userService) : ControllerBase
 {
-    [HttpGet]
-    public async Task<IActionResult> GetAllUsersAsync(CancellationToken cancellationToken)
-    {
-        var user = await userService.GetAllUsersAsync(cancellationToken);
-        return Ok(user);
-    }
+    // [HttpGet]
+    // public async Task<IActionResult> GetAllUsersAsync(CancellationToken cancellationToken)
+    // {
+    //     var user = await userService.GetAllUsersAsync(cancellationToken);
+    //     return Ok(user);
+    // }
 }

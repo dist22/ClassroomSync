@@ -13,4 +13,8 @@ public class SyncService(IUserRepository userRepository, IJobDispatcher jobDispa
         foreach (var userId in userIds) jobDispatcher.EnqueueClassroomSync(userId);
         
     }
+
+    public void TriggerUserSync(Guid userId, CancellationToken cancellationToken) => jobDispatcher.EnqueueClassroomSync(userId);
+
+    public void TriggerMasterSheetSync() => jobDispatcher.ScheduleSheetUpdate();
 }
