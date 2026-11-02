@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using ClassroomSync.Application.Interfaces.Client;
+using ClassroomSync.Application.Interfaces.Jobs;
 using ClassroomSync.Application.Interfaces.Repositories;
 using ClassroomSync.Application.Interfaces.Sevices;
 using ClassroomSync.Domain.Entities;
@@ -52,6 +53,7 @@ public class CourseService(
         }
         
         await unitOfWork.SaveChangesAsync(cancellationToken);
-        return googleCourseIds;
+        
+        return newCourses.Select(x => x.GoogleCourseId).ToList();
     }
 }

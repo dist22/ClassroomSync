@@ -16,5 +16,5 @@ public class SyncService(IUserRepository userRepository, IJobDispatcher jobDispa
 
     public void TriggerUserSync(Guid userId, CancellationToken cancellationToken) => jobDispatcher.EnqueueClassroomSync(userId);
 
-    public void TriggerMasterSheetSync() => jobDispatcher.ScheduleSheetUpdate();
+    public void TriggerMasterSheetSync(TimeSpan delay = default) => jobDispatcher.ScheduleSheetUpdate(delay);
 }

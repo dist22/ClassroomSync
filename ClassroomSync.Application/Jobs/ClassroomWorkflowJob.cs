@@ -8,14 +8,15 @@ public class ClassroomWorkflowJob(
     IUserRepository userRepository,
     ICourseService courseService,
     IAssignmentService assignmentService,
-    ISubmissionService submissionService) : IClassroomWorkflowJob
+    ISubmissionService submissionService, IJobDispatcher jobDispatcher) : IClassroomWorkflowJob
 {
     public async Task SyncCoursesAsync(Guid userId, CancellationToken cancellationToken)
     {
         var user = await userRepository.GetByIdAsync(userId, cancellationToken);
         if (user == null || string.IsNullOrEmpty(user.RefreshToken)) return;
 
-        await courseService.SyncUserCoursesAsync(user.Id, user.RefreshToken, cancellationToken);
+        var newCourseIds = await courseService.SyncUserCoursesAsync(user.Id, user.RefreshToken, cancellationToken);
+        foreach (var newCourseId in newCourseIds) jobDispatcher.EnqueueCourseSubscription(newCourseId);
     }
 
     public async Task SyncAssignmentsAndSubmissionsAsync(Guid userId, CancellationToken cancellationToken)

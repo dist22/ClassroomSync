@@ -4,6 +4,8 @@ public interface IJobDispatcher
 {
     void EnqueueClassroomSync(Guid userId);
 
-    void ScheduleSheetUpdate();
-    
+    void ScheduleSheetUpdate(TimeSpan delay);
+
+    void EnqueueCourseSubscription(string googleCourseId);
+
 }

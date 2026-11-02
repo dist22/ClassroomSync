@@ -22,7 +22,7 @@ public static class UserRecurringJobs
 
         RecurringJob.AddOrUpdate<ISyncService>(
             recurringJobId: "nightly-sheet-sync",
-            methodCall: service => service.TriggerMasterSheetSync(),
+            methodCall: service => service.TriggerMasterSheetSync(TimeSpan.Zero),
             cronExpression: "5 3 * * *",
             options: new RecurringJobOptions
             {

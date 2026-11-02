@@ -19,6 +19,7 @@ builder.Services.AddApplicationServices();
 builder.Services.AddAutoMapper();
 builder.Services.AddHangFire(builder.Configuration);
 builder.Services.AddWorkflowJob();
+builder.Services.AddConfiguration(builder.Configuration);
 
 var app = builder.Build();
 

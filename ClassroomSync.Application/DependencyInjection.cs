@@ -18,6 +18,7 @@ public static class DependencyInjection
         services.AddScoped<IUserService, UserService>();
         services.AddScoped<IReportService, ReportService>();
         services.AddScoped<ISyncService, SyncService>();
+        services.AddScoped<IWebhookService, WebhookService>();
         
         return services;
     }

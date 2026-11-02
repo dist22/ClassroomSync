@@ -11,7 +11,13 @@ public class CourseRepository(AppDbContext dbContext) : ICourseRepository
     
     public async Task<List<Course>> GetByGoogleIdsAsync(IEnumerable<string> googleCourseIds, CancellationToken cancellationToken) 
         => await _courses.Where(c => googleCourseIds.Contains(c.GoogleCourseId)).ToListAsync(cancellationToken);
-    
+
+    public async Task<List<Guid>> GetUserIdsByGoogleCourseIdAsync(string googleCourseId, CancellationToken cancellationToken) 
+        => await _courses.Where(c => c.GoogleCourseId == googleCourseId)
+            .SelectMany(c => c.UserCourses.Select(u => u.UserId))
+            .Distinct()
+            .ToListAsync(cancellationToken);
+
 
     public async Task AddAsync(Course course, CancellationToken cancellationToken) 
         => await _courses.AddAsync(course, cancellationToken);

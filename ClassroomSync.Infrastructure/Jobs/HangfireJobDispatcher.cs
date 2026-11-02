@@ -1,4 +1,6 @@
 ﻿using ClassroomSync.Application.Interfaces.Jobs;
+using ClassroomSync.Application.Interfaces.Sevices;
+using ClassroomSync.Application.Services;
 using Hangfire;
 
 namespace ClassroomSync.Infrastructure.Jobs;
@@ -14,5 +16,6 @@ public class HangfireJobDispatcher(IBackgroundJobClient backgroundJobClient) : I
             job.SyncAssignmentsAndSubmissionsAsync(userId, CancellationToken.None));
     }
 
-    public void ScheduleSheetUpdate() => backgroundJobClient.Enqueue<IReportWorkflowJob>(job => job.UpdateGoogleSheetAsync(CancellationToken.None));
+    public void ScheduleSheetUpdate(TimeSpan daley) => backgroundJobClient.Schedule<IReportWorkflowJob>(job => job.UpdateGoogleSheetAsync(CancellationToken.None), daley);
+    public void EnqueueCourseSubscription(string googleCourseId) => backgroundJobClient.Enqueue<ICourseSubscriptionService>(job => job.SubscribeToCourseEventsAsync(googleCourseId, CancellationToken.None));
 }

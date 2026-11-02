@@ -3,6 +3,7 @@ using ClassroomSync.Application.Interfaces.Client;
 using ClassroomSync.Application.Interfaces.Jobs;
 using ClassroomSync.Application.Interfaces.Repositories;
 using ClassroomSync.Infrastructure.Clients;
+using ClassroomSync.Infrastructure.Configuration;
 using ClassroomSync.Infrastructure.Data.Context;
 using ClassroomSync.Infrastructure.Jobs;
 using ClassroomSync.Infrastructure.Repositories;
@@ -103,6 +104,13 @@ public static class DependencyInjection
         services.AddScoped<IAssignmentRepository, AssignmentRepository>();
         services.AddScoped<ISubmissionRepository, SubmissionsRepository>();
         
+        
+        return services;
+    }
+
+    public static IServiceCollection AddConfiguration(this IServiceCollection services, IConfiguration configuration)
+    {
+        services.Configure<GoogleCloudOptions>(configuration.GetSection("GoogleApi"));
         return services;
     }
 

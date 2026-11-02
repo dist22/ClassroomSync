@@ -5,5 +5,6 @@ namespace ClassroomSync.Application.Interfaces.Repositories;
 public interface ICourseRepository
 {
     Task<List<Course>> GetByGoogleIdsAsync(IEnumerable<string> googleCourseIds, CancellationToken cancellationToken);
+    Task<List<Guid>> GetUserIdsByGoogleCourseIdAsync(string googleCourseId, CancellationToken cancellationToken);
     Task AddAsync(Course course, CancellationToken cancellationToken);
 }

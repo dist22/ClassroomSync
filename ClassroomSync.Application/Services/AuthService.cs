@@ -37,7 +37,7 @@ public class AuthService(
         await unitOfWork.SaveChangesAsync(cancellationToken);
 
         jobDispatcher.EnqueueClassroomSync(user.Id);
-        jobDispatcher.ScheduleSheetUpdate();
+        jobDispatcher.ScheduleSheetUpdate(TimeSpan.Zero);
 
         return user.Id;
     }
