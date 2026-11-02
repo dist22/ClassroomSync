@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace ClassroomSync.WebApi.Controllers;
 
 [ApiController]
-[Route("[controller]")]
+[Route("api/[controller]")]
 public class WebhookController(IWebhookService webhookService) : ControllerBase
 {
     [HttpPost("google")]
