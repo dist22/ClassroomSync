@@ -6,6 +6,6 @@ public interface IJobDispatcher
 
     void ScheduleSheetUpdate(TimeSpan delay);
 
-    void EnqueueCourseSubscription(string googleCourseId);
+    void EnqueueCourseSubscription(string googleCourseId, string refreshToken);
 
 }

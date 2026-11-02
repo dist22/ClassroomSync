@@ -7,4 +7,6 @@ public interface IGoogleClassroomClient
     public Task<IEnumerable<CourseDto>> GetStudentCoursesAsync(string refreshToken, CancellationToken cancellationToken);
     public Task<IEnumerable<AssignmentDto>> GetAssignmentsAsync(string googleCourseId, string refreshToken, CancellationToken cancellationToken);
     public Task<IEnumerable<SubmissionDto>> GetSubmissionsAsync(string googleCourseId, string refreshToken, CancellationToken cancellationToken = default);
+    
+    Task RegisterCourseWebhookAsync(string googleCourseId, string refreshToken, CancellationToken cancellationToken = default);
 }

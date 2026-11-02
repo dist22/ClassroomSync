@@ -1,4 +1,6 @@
-﻿using ClassroomSync.Application.Interfaces.Sevices;
+﻿using ClassroomSync.Application.Interfaces.Client;
+using ClassroomSync.Application.Interfaces.Repositories;
+using ClassroomSync.Application.Interfaces.Sevices;
 using ClassroomSync.Application.Services;
 using ClassroomSync.Infrastructure.Configuration;
 using Google;
@@ -9,43 +11,25 @@ using Microsoft.Extensions.Options;
 
 namespace ClassroomSync.Infrastructure.Services;
 
-public class GoogleClassroomSubscriptionService(ClassroomService classroomService, ILogger<GoogleClassroomSubscriptionService> logger, IOptions<GoogleCloudOptions> googleCloudOptions) : ICourseSubscriptionService
+public class GoogleClassroomSubscriptionService(IGoogleClassroomClient classroomClient, ILogger<GoogleClassroomSubscriptionService> logger, IUserRepository userRepository) : ICourseSubscriptionService
 {
-    public async Task SubscribeToCourseEventsAsync(string googleCourseId, CancellationToken cancellationToken)
+    public async Task SubscribeToCourseEventsAsync(string googleCourseId, string refreshToken,CancellationToken cancellationToken)
     {
-        var topicName = googleCloudOptions.Value.PubSubTopicName;
-        
-        var feedsToRegister = new[]
+        try
         {
-            new Feed 
-            { 
-                FeedType = "COURSE_WORK_CHANGES", 
-                CourseWorkChangesInfo = new CourseWorkChangesInfo { CourseId = googleCourseId } 
-            },
-        };
-
-        foreach (var feed in feedsToRegister)
+            // Викликаємо метод нашого клієнта
+            await classroomClient.RegisterCourseWebhookAsync(googleCourseId, refreshToken, cancellationToken);
+            logger.LogInformation("Успішно оформлено підписку COURSE_WORK_CHANGES для курсу {CourseId}", googleCourseId);
+        }
+        catch (GoogleApiException ex) when (ex.HttpStatusCode == System.Net.HttpStatusCode.Conflict)
         {
-            var registration = new Registration
-            {
-                Feed = feed,
-                CloudPubsubTopic = new CloudPubsubTopic { TopicName = topicName }
-            };
-
-            try
-            {
-                await classroomService.Registrations.Create(registration).ExecuteAsync(cancellationToken);
-                logger.LogInformation("Успішно оформлено підписку {FeedType} для курсу {CourseId}", feed.FeedType, googleCourseId);
-            }
-            catch (GoogleApiException ex) when (ex.HttpStatusCode == System.Net.HttpStatusCode.Conflict)
-            {
-                // 409 Conflict - підписка вже існує (наприклад, для іншого студента в цьому ж курсі). Все ок.
-                logger.LogDebug("Підписка на {FeedType} для курсу {CourseId} вже існує.", feed.FeedType, googleCourseId);
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, "Помилка при реєстрації вебхука для курсу {CourseId}", googleCourseId);
-            }
+            // 409 Conflict - підписка вже існує. Це нормально, просто ігноруємо.
+            logger.LogDebug("Підписка на COURSE_WORK_CHANGES для курсу {CourseId} вже існує.", googleCourseId);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Помилка при реєстрації вебхука для курсу {CourseId}", googleCourseId);
+            throw;
         }
     }
 }

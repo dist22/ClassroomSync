@@ -16,7 +16,7 @@ public class ClassroomWorkflowJob(
         if (user == null || string.IsNullOrEmpty(user.RefreshToken)) return;
 
         var newCourseIds = await courseService.SyncUserCoursesAsync(user.Id, user.RefreshToken, cancellationToken);
-        foreach (var newCourseId in newCourseIds) jobDispatcher.EnqueueCourseSubscription(newCourseId);
+        foreach (var newCourseId in newCourseIds) jobDispatcher.EnqueueCourseSubscription(newCourseId, user.RefreshToken);
     }
 
     public async Task SyncAssignmentsAndSubmissionsAsync(Guid userId, CancellationToken cancellationToken)

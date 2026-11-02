@@ -1,17 +1,21 @@
 ﻿using ClassroomSync.Application.DTOs;
 using ClassroomSync.Application.Interfaces.Client;
+using ClassroomSync.Infrastructure.Configuration;
 using Google.Apis.Auth.OAuth2;
 using Google.Apis.Auth.OAuth2.Flows;
 using Google.Apis.Auth.OAuth2.Responses;
 using Google.Apis.Classroom.v1;
+using Google.Apis.Classroom.v1.Data;
 using Google.Apis.Services;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
 
 namespace ClassroomSync.Infrastructure.Clients;
 
-public class GoogleClassroomClient(ClientSecrets clientSecrets, IConfiguration configuration) : IGoogleClassroomClient
+public class GoogleClassroomClient(ClientSecrets clientSecrets, IConfiguration configuration, IOptions<GoogleCloudOptions> googleCloudOptions) : IGoogleClassroomClient
 {
     private readonly string _applicationName = configuration["GoogleApi:ApplicationName"] ?? "ClassroomSync";
+    private readonly string _pubSubTopicName = googleCloudOptions.Value.PubSubTopicName;
 
     private ClassroomService CreateService(string refreshToken)
     {
@@ -109,5 +113,30 @@ public class GoogleClassroomClient(ClientSecrets clientSecrets, IConfiguration c
             State: s.State ?? string.Empty,
             AssignedGrade: s.AssignedGrade
         ));
+    }
+
+    public async Task RegisterCourseWebhookAsync(string googleCourseId, string refreshToken,
+        CancellationToken cancellationToken = default)
+    {
+        var service = CreateService(refreshToken);
+
+        var registration = new Registration
+        {
+            CloudPubsubTopic = new CloudPubsubTopic 
+            { 
+                TopicName = _pubSubTopicName 
+            },
+            Feed = new Feed 
+            { 
+                FeedType = "COURSE_WORK_CHANGES", 
+                CourseWorkChangesInfo = new CourseWorkChangesInfo 
+                { 
+                    CourseId = googleCourseId 
+                } 
+            }
+        };
+
+        var request = service.Registrations.Create(registration);
+        await request.ExecuteAsync(cancellationToken);
     }
 }

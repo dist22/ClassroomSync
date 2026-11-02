@@ -2,5 +2,5 @@
 
 public interface ICourseSubscriptionService
 {
-    public Task SubscribeToCourseEventsAsync (string googleCourseId, CancellationToken cancellationToken);
+    public Task SubscribeToCourseEventsAsync (string googleCourseId,string refreshToken, CancellationToken cancellationToken);
 }
