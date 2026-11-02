@@ -2,11 +2,13 @@
 using ClassroomSync.Application.Interfaces.Client;
 using ClassroomSync.Application.Interfaces.Jobs;
 using ClassroomSync.Application.Interfaces.Repositories;
+using ClassroomSync.Application.Interfaces.Sevices;
 using ClassroomSync.Infrastructure.Clients;
 using ClassroomSync.Infrastructure.Configuration;
 using ClassroomSync.Infrastructure.Data.Context;
 using ClassroomSync.Infrastructure.Jobs;
 using ClassroomSync.Infrastructure.Repositories;
+using ClassroomSync.Infrastructure.Services;
 using Google.Apis.Auth.OAuth2;
 using Google.Apis.Classroom.v1;
 using Google.Apis.Services;
@@ -91,6 +93,7 @@ public static class DependencyInjection
         services.AddScoped<IGoogleSheetClient, GoogleSheetsClient>();
         services.AddScoped<IGoogleAuthClient, GoogleAuthClient>();
         services.AddScoped<IGoogleClassroomClient, GoogleClassroomClient>();
+        services.AddScoped<ICourseSubscriptionService, GoogleClassroomSubscriptionService>();
         
         return services;   
     }
