@@ -7,7 +7,7 @@ using Microsoft.Extensions.Logging;
 
 namespace ClassroomSync.Application.Services;
 
-public class WebhookService(ISyncService syncService, ILogger logger, ICourseRepository courseRepository) : IWebhookService
+public class WebhookService(ISyncService syncService, ILogger<WebhookService> logger, ICourseRepository courseRepository) : IWebhookService
 {
     public async Task ProcessGoogleClassroomNotification(PubSubPayload payload)
     {

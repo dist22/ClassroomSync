@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using ClassroomSync.Application.DTOs;
+using ClassroomSync.Application.DTOs.Responses;
 using ClassroomSync.Domain.Entities;
 
 namespace ClassroomSync.Application.Mappings;
@@ -15,5 +16,8 @@ public class CourseProfile : Profile
             
             .ForMember(dest => dest.UserCourses, opt => opt.Ignore())
             .ForMember(dest => dest.Assignments, opt => opt.Ignore());
+
+        CreateMap<Course, CourseResponseDto>();
+        CreateMap<CourseResponseDto, Course>();
     }
 }

@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using ClassroomSync.Application.DTOs.Responses;
 using ClassroomSync.Application.Interfaces.Client;
 using ClassroomSync.Application.Interfaces.Jobs;
 using ClassroomSync.Application.Interfaces.Repositories;
@@ -55,5 +56,11 @@ public class CourseService(
         await unitOfWork.SaveChangesAsync(cancellationToken);
         
         return newCourses.Select(x => x.GoogleCourseId).ToList();
+    }
+
+    public async Task<IEnumerable<CourseResponseDto>> GetUserCoursesAsync(Guid userId, CancellationToken cancellationToken)
+    {
+        var userCourses = await courseRepository.GetUserCoursesAsync(userId, cancellationToken);
+        return mapper.Map<IEnumerable<CourseResponseDto>>(userCourses);
     }
 }
